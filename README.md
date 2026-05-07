@@ -1,20 +1,25 @@
 # MIDO-Chat
 
-MIDO-Chat（Multimodal Instructional Design Optimization）是一个基于 FastAPI + 原生前端的教学设计优化工作台。  
-系统通过“三维参与度分布（Behavioral / Emotional / Cognitive-ICAP）”与“当前教学意图”结合，生成具有可操作性的课堂优化策略。
+[English](./README_EN.md) | 中文
 
-## 核心能力
+MIDO-Chat（Multimodal Instructional Design Optimization）是一个面向课堂场景的多模态教学优化工作台。  
+系统将视频检测（行为/情感）、音频转写与 ICAP、教学设计结构化和 LLM 对话整合到同一界面，用于生成可执行的教学改进建议。
 
-- 三维群体参与度可视化：左侧面板以堆叠进度条展示全班百分比分布
-- Mock 数据引擎：`/api/metrics` 每次返回结构化比例数据（各维度和为 1.0）
-- 动态刷新：前端每 3 秒自动拉取最新指标并平滑更新 UI
-- 策略生成：`/api/optimize` 接收教学意图 + 最新指标，调用大模型生成策略
-- SSE 流式输出：后端以 `StreamingResponse` 持续返回，前端实时打字机渲染
+## 功能概览
+
+- 一键 `Data Processing` 流程：视频上传、目标检测、音频转写、ICAP、教案结构化
+- 三维时序图：Behavioral / Emotional / Cognitive(ICAP) 按 30 秒粒度展示
+- 支持多数据源切换：Video Analysis Results / Local Timeline JSON / Mock Data
+- 教学诊断与对话：基于选定时间段 + 教学意图 + 指标数据进行流式输出（SSE）
+- 班级记忆文件：支持加载本地“班级历史基线记忆”以增强个性化建议
+- 过程文件下载：音频、转写、投入度 CSV/JSON、结构化教学设计 JSON
 
 ## 技术栈
 
-- 后端：Python 3.10+、FastAPI、Pydantic、OpenAI SDK、Uvicorn、Jinja2
-- 前端：HTML5、原生 JavaScript（ES6+）、Tailwind CSS（CDN）
+- 后端：Python, FastAPI, Pydantic, OpenAI SDK, Jinja2, Uvicorn
+- 前端：HTML, Vanilla JavaScript, Tailwind CSS, Chart.js
+- 多媒体：FFmpeg（音频提取/分段）
+- 视觉分析：RT-DETR-DHSA（项目内子目录调用）
 
 ## 项目结构
 
@@ -23,15 +28,18 @@ MIDO-Chat/
 ├─ main.py
 ├─ llm_config.py
 ├─ llm.private.example.json
+├─ llm.private.json          # 本地私密配置（已忽略）
+├─ prompt_templates.py
 ├─ requirements.txt
-├─ README.md
 ├─ routers/
-│  ├─ __init__.py
 │  ├─ id_parser.py
 │  ├─ metrics.py
-│  └─ optimize.py
-└─ templates/
-   └─ index.html
+│  ├─ optimize.py
+│  └─ video.py
+├─ templates/
+│  └─ index.html
+├─ generated/                # 运行产物（已忽略）
+└─ RT-DETR-DHSA/
 ```
 
 ## 快速开始
@@ -42,54 +50,25 @@ MIDO-Chat/
 pip install -r requirements.txt
 ```
 
-### 2) 配置私密模型文件（推荐）
+### 2) 配置模型密钥
 
-项目根目录有两个文件：
+复制示例文件并填写你自己的密钥：
 
-- `llm.private.example.json`：多模型示例
-- `llm.private.json`：你的私密配置（已加入 `.gitignore`，不会提交）
-
-推荐将示例复制到私密文件后填写：
-
-```json
-{
-  "active_profile": "openai",
-  "profiles": {
-    "openai": {
-      "api_key": "你的-openai-key",
-      "base_url": "https://api.openai.com/v1",
-      "model": "gpt-4o-mini"
-    },
-    "deepseek": {
-      "api_key": "你的-deepseek-key",
-      "base_url": "https://api.deepseek.com/v1",
-      "model": "deepseek-chat"
-    },
-    "qwen": {
-      "api_key": "你的-qwen-key",
-      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "model": "qwen-plus"
-    }
-  }
-}
+```bash
+cp llm.private.example.json llm.private.json
 ```
 
-切换模型只需改一处：
+`llm.private.json` 已在 `.gitignore` 中，不会被提交。  
+也可使用环境变量作为兜底。
 
-- `active_profile` 改成 `openai` / `deepseek` / `qwen`
+### 3) 准备 FFmpeg（必需）
 
-### 3) 环境变量（可选兜底）
+请确保命令行可直接执行：
 
-在 Windows PowerShell:
-
-```powershell
-$env:OPENAI_API_KEY="your_api_key"
-$env:OPENAI_MODEL="gpt-4o-mini"
+```bash
+ffmpeg -version
+ffprobe -version
 ```
-
-> 未设置 `OPENAI_API_KEY` 时，`/api/optimize` 会自动回退为 mock 流式输出，方便本地演示。
-
-> 当 `llm.private.json` 存在时，优先读取该文件；环境变量作为兜底。
 
 ### 4) 启动服务
 
@@ -97,118 +76,79 @@ $env:OPENAI_MODEL="gpt-4o-mini"
 uvicorn main:app --reload
 ```
 
-启动后访问：
+访问：
 
 - [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-## API 说明
+## 核心 API
 
-### 视频大文件与音频分离
+### 视频处理与进度
 
-为支持 1-10GB 视频，后端采用分片上传方案（默认上限 10GB）：
+- `GET /api/video/limits`
+- `POST /api/video/upload/init`
+- `POST /api/video/upload/chunk`
+- `POST /api/video/upload/complete`
+- `POST /api/video/extract_audio`
+- `POST /api/video/transcribe_audio`
+- `GET /api/video/transcribe_progress/{upload_id}`
+- `GET /api/video/vision_progress/{upload_id}`
 
-- `GET /api/video/limits`：获取上传上限
-- `POST /api/video/upload/init`：初始化上传任务
-- `POST /api/video/upload/chunk`：上传分片
-- `POST /api/video/upload/complete`：合并分片
-- `POST /api/video/extract_audio`：从视频分离音频（mp3/wav）
-- `POST /api/video/transcribe_audio`：使用小模型进行音频转写（含时间片段）
-- `GET /api/video/audio/download/{audio_filename}`：下载音频
-- `GET /api/video/transcript/download/{transcript_filename}`：下载转写 JSON
+### 结果下载
 
-> 音频分离依赖 `ffmpeg`，请先在服务器安装并确保命令行可用。
-> 音频转写模型可在 `llm.private.json` 中配置：
-> - `asr_profile`：用于转写的模型供应商档位（建议 `gpt4o`）
-> - `asr_model`：转写模型名（默认 `gpt-4o-mini-transcribe`）
-> - 超长音频会自动触发分块转写并合并结果
+- `GET /api/video/audio/download/{audio_filename}`
+- `GET /api/video/transcript/download/{transcript_filename}`
+- `GET /api/video/vision_metrics/download/{upload_id}/csv`
+- `GET /api/video/vision_metrics/download/{upload_id}/json`
+- `GET /api/parse_id/download/{json_filename}`
 
-### `GET /api/metrics`
+### 教学设计与策略
 
-返回三维参与度分布（Mock）：
+- `POST /api/parse_id`
+- `POST /api/metrics_timeline/video`
+- `POST /api/optimize`（SSE 流式）
 
-```json
-{
-  "behavioral": {
-    "Active": 0.52,
-    "Passive": 0.36,
-    "Disruptive": 0.12
-  },
-  "emotional": {
-    "Positive": 0.46,
-    "Neutral": 0.41,
-    "Frustrated": 0.13
-  },
-  "icap": {
-    "Interactive": 0.18,
-    "Constructive": 0.29,
-    "Active": 0.23,
-    "Passive": 0.20,
-    "Off-task": 0.10
-  }
-}
-```
+## 班级历史基线记忆文件
 
-### `POST /api/optimize`
+界面支持“Load Class Memory File”按钮，推荐 JSON 格式。  
+模板文件位于：
 
-请求体：
+- `generated/class_memory_template.json`
 
-```json
-{
-  "teaching_intent": "通过小组合作完成细胞结构的证据化比较与解释",
-  "metrics": {
-    "behavioral": {"Active": 0.5, "Passive": 0.4, "Disruptive": 0.1},
-    "emotional": {"Positive": 0.4, "Neutral": 0.5, "Frustrated": 0.1},
-    "icap": {"Interactive": 0.2, "Constructive": 0.3, "Active": 0.2, "Passive": 0.2, "Off-task": 0.1}
-  }
-}
-```
+该文件会作为上下文传给 `/api/optimize`，用于让建议更贴合具体班级画像。
 
-响应类型：
+## 提示词与可配置项
 
-- `text/event-stream`（SSE）
-- 数据帧格式：`data: {"delta":"..."}`，结束标记：`data: [DONE]`
+所有提示词集中在：
 
-## 前端交互逻辑
+- `prompt_templates.py`
 
-- 页面加载后立即请求一次 `/api/metrics`
-- 每 3 秒定时拉取最新指标并更新堆叠进度条与百分比
-- 点击“生成优化策略”后，POST 到 `/api/optimize`
-- 逐块解析 SSE 数据并实时追加到右侧策略区，自动滚动到底部
+主要模板：
 
-## 模型提示词设计（后端）
+- `id_parse_system` / `id_parse_user`
+- `optimize_system` / `optimize_user`
+- `chat_system` / `chat_user`
+- `icap_window_system` / `icap_window_user`
 
-项目所有提示词统一放在 `prompt_templates.py`，并通过变量模板渲染：
+## 安全与忽略策略
 
-- `id_parse_system` / `id_parse_user`：用于教案结构化
-- `optimize_system` / `optimize_user`：用于诊断与策略生成
+默认已忽略：
 
-你可以在模板里用变量占位，例如 `{assistant_name}`、`{document_text}`、`{teaching_intent}`。
-
-`/api/optimize` 的输出逻辑要求模型按两步分析：
-
-1. **断层诊断（Gap Diagnosis）**：对比教学意图与实际分布，识别异常占比与风险
-2. **语境校准（Contextual Calibration）**：给出具体、可执行、可落地的教案改造动作
-
-调用位置：
-
-- `routers/id_parser.py`：通过 `render_prompt("id_parse_*", ...)` 注入变量
-- `routers/optimize.py`：通过 `render_prompt("optimize_*", ...)` 注入变量
+- `llm.private.json`
+- `generated/`
+- `__pycache__/`
+- 测试案例目录模式（`*测试*/`, `*案例*/`, `test_cases/` 等）
 
 ## 常见问题
 
-- **Q: 为什么策略输出不是模型真实结果？**  
-  A: 请确认 `OPENAI_API_KEY` 已配置；未配置时会进入 mock 流式回退。
+- **策略输出看起来像 mock？**  
+  请检查密钥配置；无可用密钥时会走回退逻辑。
 
-- **Q: SSE 没有实时显示？**  
-  A: 检查浏览器控制台是否有网络错误，确认后端返回 `text/event-stream`，并且前端在读取 `ReadableStream`。
+- **视频流程卡住或失败？**  
+  优先检查 FFmpeg 是否可用、GPU/模型路径是否正常、以及上传文件是否完整。
 
-## 后续迭代建议
-
-- 将 `metrics.py` 的 Mock 改为随机扰动/回放数据引擎
-- 将右侧策略区升级为 Markdown 渲染（标题、列表、强调）
-- 增加策略生成过程状态（排队中、生成中、完成、失败）
-- 引入鉴权与会话管理，支持多班级、多课程并行分析
+- **为什么有些时间段按钮灰掉不可点击？**  
+  当前数据源在该时间段没有可用窗口数据。
 
 ## 许可
 
-当前仓库未声明开源许可，如需开源请补充 `LICENSE` 文件。
+当前仓库未附带开源许可证。如需开源，请补充 `LICENSE`。

@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDO-Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hide-scroll::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden bg-slate-100 text-slate-800 antialiased">
+    <div class="h-full p-4">
+        <main class="h-full flex gap-4 overflow-hidden">
+            <aside class="w-1/5 min-w-[300px] flex flex-col gap-4 overflow-hidden">
+                <section class="h-[48%] bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col overflow-hidden">
+                    <div class="mb-2">
+                        <h2 class="text-lg leading-none font-semibold text-slate-800 flex items-center gap-2">
+                            <span class="text-slate-400 text-sm">☷</span>
+                            <span class="text-lg">Session Configuration</span>
+                        </h2>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block mb-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Subject</label>
+                            <select id="subjectSelect" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-700 outline-none">
+                                <option value="Chinese">Chinese</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="English">English</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                                <option value="Biology" selected>Biology</option>
+                                <option value="History">History</option>
+                                <option value="Geography">Geography</option>
+                                <option value="Ethics and Law">Ethics and Law</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block mb-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Video Source</label>
+                            <input id="videoFileInput" type="file" accept="video/*" class="hidden">
+                            <button
+                                id="videoPickerBtn"
+                                type="button"
+                                class="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"
+                            >
+                                <span id="videoFileName" class="text-[13px] text-slate-700 truncate">No video selected</span>
+                                <span class="text-[12px] font-medium text-indigo-600">Choose File</span>
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block mb-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Instructional Design (ID)</label>
+                            <input id="idDocxInput" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden">
+                            <button
+                                id="idDocxPickerBtn"
+                                type="button"
+                                class="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left"
+                            >
+                                <span id="idDocxFileName" class="text-[13px] text-slate-700 truncate">No instructional design file selected</span>
+                                <span class="text-[12px] font-medium text-indigo-600">Choose File</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <button
+                            id="dataProcessBtn"
+                            class="relative w-full overflow-hidden rounded-lg bg-slate-900 text-white text-xs font-semibold py-2.5 hover:bg-slate-800 transition"
+                        >
+                            <span id="dataProcessProgressBar" class="absolute inset-y-0 left-0 w-0 bg-indigo-500/60 transition-all duration-200"></span>
+                            <span id="dataProcessBtnText" class="relative z-10">Data Processing</span>
+                        </button>
+                        <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                            <p id="audioProgressText" class="truncate">Audio analysis: pending</p>
+                            <p id="visionProgressText" class="truncate text-right">Vision analysis: pending</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <a
+                                id="audioDownloadBtn"
+                                href="#"
+                                download
+                                aria-disabled="true"
+                                class="relative inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-60 pointer-events-none overflow-hidden"
+                            >
+                                <span id="audioDownloadProgressBar" class="absolute inset-y-0 left-0 w-0 bg-emerald-500/30 transition-all duration-200"></span>
+                                <span id="audioDownloadLabel" class="relative z-10">Download Audio</span>
+                            </a>
+                            <a
+                                id="transcriptDownloadBtn"
+                                href="#"
+                                download
+                                aria-disabled="true"
+                                class="relative inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-60 pointer-events-none overflow-hidden"
+                            >
+                                <span id="transcriptDownloadProgressBar" class="absolute inset-y-0 left-0 w-0 bg-amber-500/30 transition-all duration-200"></span>
+                                <span id="transcriptDownloadLabel" class="relative z-10">Download Transcript</span>
+                            </a>
+                            <a
+                                id="parseStatusDownloadBtn"
+                                href="#"
+                                download
+                                aria-disabled="true"
+                                class="relative col-span-2 inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-60 pointer-events-none overflow-hidden"
+                            >
+                                <span id="structuredDownloadProgressBar" class="absolute inset-y-0 left-0 w-0 bg-slate-500/30 transition-all duration-200"></span>
+                                <span id="structuredDownloadLabel" class="relative z-10">Download Structured ID JSON</span>
+                            </a>
+                            <a
+                                id="metricsCsvDownloadBtn"
+                                href="#"
+                                download
+                                aria-disabled="true"
+                                class="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-60 pointer-events-none"
+                            >
+                                <span id="metricsCsvDownloadLabel">Download Engagement CSV</span>
+                            </a>
+                            <a
+                                id="metricsJsonDownloadBtn"
+                                href="#"
+                                download
+                                aria-disabled="true"
+                                class="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-400 opacity-60 pointer-events-none"
+                            >
+                                <span id="metricsJsonDownloadLabel">Download Engagement JSON</span>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="h-[52%] bg-white border border-slate-200 rounded-xl shadow-sm p-4 overflow-hidden flex flex-col">
+                    <div class="mb-3 shrink-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 class="text-sm font-semibold text-slate-800">Timestamp Selection</h2>
+                            <div class="flex items-center gap-1.5">
+                                <input id="roadmapJsonInput" type="file" accept=".json,application/json" class="hidden">
+                                <button
+                                    id="roadmapJsonUploadBtn"
+                                    type="button"
+                                    class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+                                >
+                                    Upload Local JSON
+                                </button>
+                            </div>
+                        </div>
+                        <p id="roadmapUploadStatus" class="text-xs text-slate-500 mt-1">Select a timestamp here; chart results are determined jointly with the data source on the upper right.</p>
+                    </div>
+                    <div id="timelineContainer" class="flex-1 overflow-y-auto hide-scroll pr-1">
+                        <div class="h-full flex items-center justify-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg">
+                            Waiting for instructional design parsing...
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <section class="w-4/5 flex flex-col gap-4 overflow-hidden">
+                <section class="h-[45%] bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col overflow-hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-800">3D Engagement Timeline Charts</h2>
+                            <p id="segmentInfo" class="text-xs text-slate-500 mt-1">Select a lesson segment on the left first. Charts are shown by behavioral/emotional/cognitive dimensions (30s granularity).</p>
+                        </div>
+                        <div class="shrink-0 flex flex-col items-end gap-1">
+                            <div class="flex items-center gap-2">
+                                <label for="metricsSourceSelect" class="text-[11px] text-slate-500 shrink-0">Data Source</label>
+                                <select id="metricsSourceSelect" class="w-[220px] rounded-md border border-slate-300 bg-white px-3 py-1.5 pr-7 text-[13px] text-slate-700 leading-5 shadow-sm shrink-0">
+                                    <option value="video">Video Analysis Results</option>
+                                    <option value="local">Local Timeline JSON</option>
+                                    <option value="mock">Mock Data</option>
+                                </select>
+                                <input id="metricsJsonInput" type="file" accept=".json,application/json" class="hidden">
+                                <button
+                                    id="metricsJsonUploadBtn"
+                                    type="button"
+                                    class="w-[118px] rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 shrink-0"
+                                >
+                                    Import Local Timeline JSON
+                                </button>
+                            </div>
+                            <span id="metricsJsonFileName" class="w-[250px] truncate text-right text-[11px] text-slate-500"></span>
+                        </div>
+                    </div>
+                    <div class="relative flex-1 min-h-0">
+                        <div id="metricsLoadingOverlay" class="absolute inset-0 z-10 hidden items-center justify-center rounded-lg bg-white/85 border border-slate-200">
+                            <div class="text-center px-6">
+                                <p class="text-sm font-semibold text-slate-700">Vision Analysis in Progress</p>
+                                <p id="metricsLoadingText" class="mt-1 text-xs text-slate-500">Detection is not completed yet, please wait...</p>
+                            </div>
+                        </div>
+                    <div class="h-full min-h-0 grid grid-cols-3 gap-3">
+                        <div class="h-full border border-slate-200 rounded-lg p-2 flex flex-col overflow-hidden">
+                            <h3 class="text-[11px] font-semibold text-slate-700 mb-1">Behavioral</h3>
+                            <div id="behavioralChartScroll" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+                                <div id="behavioralChartInner" class="h-full min-w-full">
+                                    <canvas id="behavioralChartCanvas" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-full border border-slate-200 rounded-lg p-2 flex flex-col overflow-hidden">
+                            <h3 class="text-[11px] font-semibold text-slate-700 mb-1">Emotional</h3>
+                            <div id="emotionalChartScroll" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+                                <div id="emotionalChartInner" class="h-full min-w-full">
+                                    <canvas id="emotionalChartCanvas" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-full border border-slate-200 rounded-lg p-2 flex flex-col overflow-hidden">
+                            <h3 class="text-[11px] font-semibold text-slate-700 mb-1">Cognitive (ICAP)</h3>
+                            <div id="cognitiveChartScroll" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+                                <div id="cognitiveChartInner" class="h-full min-w-full">
+                                    <canvas id="cognitiveChartCanvas" class="w-full h-full"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </section>
+
+                <section class="h-[55%] bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-800">Teaching Diagnosis & Chat</h2>
+                            <p id="featureSummary" class="text-xs text-slate-500 mt-1">Subject: - | Time Range: - | Teaching Intent: -</p>
+                            <p id="classMemoryFileName" class="text-[11px] text-slate-400 mt-1"></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="classMemoryInput" type="file" accept=".json,.txt,.md,application/json,text/plain" class="hidden">
+                            <button
+                                id="classMemoryUploadBtn"
+                                type="button"
+                                class="rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-semibold px-3 py-2 hover:bg-slate-100 transition"
+                            >
+                                Load Class Memory File
+                            </button>
+                            <button
+                                id="generateStrategyBtn"
+                                class="rounded-lg bg-indigo-600 text-white text-xs font-semibold px-3 py-2 hover:bg-indigo-500 transition"
+                            >
+                                Optimize Teaching Design
+                            </button>
+                        </div>
+                    </div>
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 hide-scroll">
+                        <div class="text-xs text-slate-400">Select a lesson segment on the left, then generate suggestions or ask follow-up questions.</div>
+                    </div>
+                    <div class="p-3 border-t border-slate-100 bg-white flex items-center gap-2">
+                        <input
+                            id="chatInput"
+                            type="text"
+                            class="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Enter a follow-up question, e.g., How can I reduce Off-task without interrupting flow?"
+                        >
+                        <button id="sendChatBtn" class="rounded-lg bg-slate-900 text-white text-xs font-semibold px-4 py-2 hover:bg-slate-800 transition">
+                            Send
+                        </button>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const timelineContainer = document.getElementById("timelineContainer");
+        const subjectSelect = document.getElementById("subjectSelect");
+        const videoFileInput = document.getElementById("videoFileInput");
+        const idDocxInput = document.getElementById("idDocxInput");
+        const videoPickerBtn = document.getElementById("videoPickerBtn");
+        const dataProcessBtn = document.getElementById("dataProcessBtn");
+        const dataProcessProgressBar = document.getElementById("dataProcessProgressBar");
+        const dataProcessBtnText = document.getElementById("dataProcessBtnText");
+        const audioDownloadBtn = document.getElementById("audioDownloadBtn");
+        const audioDownloadProgressBar = document.getElementById("audioDownloadProgressBar");
+        const audioDownloadLabel = document.getElementById("audioDownloadLabel");
+        const transcriptDownloadBtn = document.getElementById("transcriptDownloadBtn");
+        const transcriptDownloadProgressBar = document.getElementById("transcriptDownloadProgressBar");
+        const transcriptDownloadLabel = document.getElementById("transcriptDownloadLabel");
+        const metricsCsvDownloadBtn = document.getElementById("metricsCsvDownloadBtn");
+        const metricsCsvDownloadLabel = document.getElementById("metricsCsvDownloadLabel");
+        const metricsJsonDownloadBtn = document.getElementById("metricsJsonDownloadBtn");
+        const metricsJsonDownloadLabel = document.getElementById("metricsJsonDownloadLabel");
+        const structuredDownloadProgressBar = document.getElementById("structuredDownloadProgressBar");
+        const structuredDownloadLabel = document.getElementById("structuredDownloadLabel");
+        const audioProgressText = document.getElementById("audioProgressText");
+        const visionProgressText = document.getElementById("visionProgressText");
+        const idDocxPickerBtn = document.getElementById("idDocxPickerBtn");
+        const videoFileName = document.getElementById("videoFileName");
+        const idDocxFileName = document.getElementById("idDocxFileName");
+        const parseStatusDownloadBtn = document.getElementById("parseStatusDownloadBtn");
+        const roadmapJsonInput = document.getElementById("roadmapJsonInput");
+        const roadmapJsonUploadBtn = document.getElementById("roadmapJsonUploadBtn");
+        const roadmapUploadStatus = document.getElementById("roadmapUploadStatus");
+        const metricsSourceSelect = document.getElementById("metricsSourceSelect");
+        const metricsJsonInput = document.getElementById("metricsJsonInput");
+        const metricsJsonUploadBtn = document.getElementById("metricsJsonUploadBtn");
+        const metricsJsonFileName = document.getElementById("metricsJsonFileName");
+        const segmentInfo = document.getElementById("segmentInfo");
+        const featureSummary = document.getElementById("featureSummary");
+        const classMemoryInput = document.getElementById("classMemoryInput");
+        const classMemoryUploadBtn = document.getElementById("classMemoryUploadBtn");
+        const classMemoryFileName = document.getElementById("classMemoryFileName");
+        const metricsLoadingOverlay = document.getElementById("metricsLoadingOverlay");
+        const metricsLoadingText = document.getElementById("metricsLoadingText");
+        const generateStrategyBtn = document.getElementById("generateStrategyBtn");
+        const chatMessages = document.getElementById("chatMessages");
+        const behavioralChartScroll = document.getElementById("behavioralChartScroll");
+        const behavioralChartInner = document.getElementById("behavioralChartInner");
+        const behavioralChartCanvas = document.getElementById("behavioralChartCanvas");
+        const emotionalChartScroll = document.getElementById("emotionalChartScroll");
+        const emotionalChartInner = document.getElementById("emotionalChartInner");
+        const emotionalChartCanvas = document.getElementById("emotionalChartCanvas");
+        const cognitiveChartScroll = document.getElementById("cognitiveChartScroll");
+        const cognitiveChartInner = document.getElementById("cognitiveChartInner");
+        const cognitiveChartCanvas = document.getElementById("cognitiveChartCanvas");
+
+        let selectedSegment = null;
+        let currentTimelineData = null;
+        let currentFeatureSummary = "";
+        let classMemoryContext = "";
+        let classMemoryFilename = "";
+        let chartInstances = {
+            behavioral: null,
+            emotional: null,
+            cognitive: null
+        };
+        let currentVideoUploadId = "";
+        let latestTranscriptText = "";
+        let latestTranscriptSegments = [];
+        let visionPollingToken = 0;
+        let currentVisionStatus = "idle";
+        let localTimelineWindows = null;
+        let currentRoadmapItems = [];
+        let selectedMetricsSource = "video";
+        const segmentAvailabilityCache = new Map();
+        let availabilityRefreshToken = 0;
+        let dataProcessRunning = false;
+        let pipelineProgress = { upload: 0, audio: 0, transcribe: 0, vision: 0, structured: 0 };
+        const downloadUrls = { audio: "", transcript: "", metricsCsv: "", metricsJson: "", structured: "" };
+
+        function setDownloadButtonState(buttonEl, downloadUrl) {
+            if (!buttonEl) return;
+            const enabled = Boolean(downloadUrl);
+            buttonEl.href = enabled ? downloadUrl : "#";
+            buttonEl.setAttribute("aria-disabled", enabled ? "false" : "true");
+            buttonEl.classList.toggle("pointer-events-none", !enabled);
+            buttonEl.classList.toggle("opacity-60", !enabled);
+            buttonEl.classList.toggle("bg-slate-100", !enabled);
+            buttonEl.classList.toggle("text-slate-400", !enabled);
+            buttonEl.classList.toggle("border-slate-200", !enabled);
+            buttonEl.classList.toggle("bg-white", enabled);
+            buttonEl.classList.toggle("text-slate-700", enabled);
+            buttonEl.classList.toggle("border-slate-300", enabled);
+            buttonEl.classList.toggle("hover:bg-slate-100", enabled);
+        }
+
+        function setDownloadProgress(progressBarEl, labelEl, baseText, percent) {
+            const clamped = Math.max(0, Math.min(100, Number(percent || 0)));
+            if (progressBarEl) {
+                progressBarEl.style.width = `${clamped}%`;
+            }
+            if (labelEl) {
+                if (clamped <= 0 || clamped >= 100) {
+                    labelEl.textContent = baseText;
+                } else {
+                    labelEl.textContent = `${baseText} ${clamped.toFixed(0)}%`;
+                }
+            }
+        }
+
+        function updateDownloadVisuals() {
+            const audioReady = pipelineProgress.audio >= 1 && Boolean(downloadUrls.audio);
+            const transcriptReady = pipelineProgress.transcribe >= 1 && Boolean(downloadUrls.transcript);
+            const metricsReady = pipelineProgress.vision >= 1 && Boolean(downloadUrls.metricsCsv) && Boolean(downloadUrls.metricsJson);
+            const structuredReady = pipelineProgress.structured >= 1 && Boolean(downloadUrls.structured);
+
+            setDownloadProgress(audioDownloadProgressBar, audioDownloadLabel, "Download Audio", pipelineProgress.audio * 100);
+            setDownloadProgress(transcriptDownloadProgressBar, transcriptDownloadLabel, "Download Transcript", pipelineProgress.transcribe * 100);
+            setDownloadProgress(structuredDownloadProgressBar, structuredDownloadLabel, "Download Structured ID JSON", pipelineProgress.structured * 100);
+            metricsCsvDownloadLabel.textContent = "Download Engagement CSV";
+            metricsJsonDownloadLabel.textContent = "Download Engagement JSON";
+
+            setDownloadButtonState(audioDownloadBtn, audioReady ? downloadUrls.audio : "");
+            setDownloadButtonState(transcriptDownloadBtn, transcriptReady ? downloadUrls.transcript : "");
+            setDownloadButtonState(metricsCsvDownloadBtn, metricsReady ? downloadUrls.metricsCsv : "");
+            setDownloadButtonState(metricsJsonDownloadBtn, metricsReady ? downloadUrls.metricsJson : "");
+            setDownloadButtonState(parseStatusDownloadBtn, structuredReady ? downloadUrls.structured : "");
+        }
+
+        function setParseDownloadButton(downloadUrl) {
+            downloadUrls.structured = downloadUrl || "";
+            updateDownloadVisuals();
+        }
+
+        function setDataProcessButtonLoading(loading) {
+            dataProcessRunning = loading;
+            dataProcessBtn.disabled = loading;
+            dataProcessBtn.classList.toggle("opacity-60", loading);
+            dataProcessBtn.classList.toggle("cursor-not-allowed", loading);
+            if (!loading && Number(dataProcessProgressBar.style.width.replace("%", "") || 0) < 100) {
+                dataProcessBtnText.textContent = "Data Processing";
+            }
+        }
+
+        function setVisionDownloads(uploadId) {
+            if (!uploadId) {
+                downloadUrls.metricsCsv = "";
+                downloadUrls.metricsJson = "";
+                updateDownloadVisuals();
+                return;
+            }
+            downloadUrls.metricsCsv = `/api/video/vision_metrics/download/${encodeURIComponent(uploadId)}/csv`;
+            downloadUrls.metricsJson = `/api/video/vision_metrics/download/${encodeURIComponent(uploadId)}/json`;
+            updateDownloadVisuals();
+        }
+
+        function clearDownloadStates() {
+            downloadUrls.audio = "";
+            downloadUrls.transcript = "";
+            downloadUrls.metricsCsv = "";
+            downloadUrls.metricsJson = "";
+            downloadUrls.structured = "";
+            pipelineProgress = { upload: 0, audio: 0, transcribe: 0, vision: 0, structured: 0 };
+            updateDownloadVisuals();
+        }
+
+        function setPipelineProgress(percent) {
+            const clamped = Math.max(0, Math.min(100, Number(percent || 0)));
+            dataProcessProgressBar.style.width = `${clamped}%`;
+            if (!dataProcessRunning && clamped <= 0) {
+                dataProcessBtnText.textContent = "Data Processing";
+                return;
+            }
+            if (!dataProcessRunning && clamped < 100) {
+                return;
+            }
+            dataProcessBtnText.textContent = clamped >= 100
+                ? "Data processing complete. Files are ready to download."
+                : (clamped <= 0 ? "Processing data..." : `Processing data ${clamped.toFixed(0)}%`);
+        }
+
+        function updatePipelineProgress(partial = {}) {
+            pipelineProgress = { ...pipelineProgress, ...partial };
+            const total = (
+                pipelineProgress.upload * 0.2
+                + pipelineProgress.audio * 0.1
+                + pipelineProgress.transcribe * 0.2
+                + pipelineProgress.vision * 0.35
+                + pipelineProgress.structured * 0.15
+            ) * 100;
+            setPipelineProgress(total);
+            updateDownloadVisuals();
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes || bytes <= 0) {
+                return "0 B";
+            }
+            const units = ["B", "KB", "MB", "GB", "TB"];
+            let value = bytes;
+            let unitIndex = 0;
+            while (value >= 1024 && unitIndex < units.length - 1) {
+                value /= 1024;
+                unitIndex += 1;
+            }
+            return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+        }
+
+        function setVideoUploadProgress(progressPercent) {
+            const clamped = Math.max(0, Math.min(100, progressPercent));
+            updatePipelineProgress({ upload: clamped / 100 });
+        }
+
+        function setVisionProgress(progressPercent) {
+            const clamped = Math.max(0, Math.min(100, Number(progressPercent || 0)));
+            updatePipelineProgress({ vision: clamped / 100 });
+        }
+
+        function setMetricsWaiting(waiting, text = "") {
+            metricsLoadingOverlay.classList.toggle("hidden", !waiting);
+            metricsLoadingOverlay.classList.toggle("flex", waiting);
+            if (text) {
+                metricsLoadingText.textContent = text;
+            }
+            generateStrategyBtn.disabled = waiting;
+            generateStrategyBtn.classList.toggle("opacity-50", waiting);
+            generateStrategyBtn.classList.toggle("cursor-not-allowed", waiting);
+        }
+
+        function setVideoUploadStatus(text) {
+            if (audioProgressText) {
+                audioProgressText.textContent = `Audio analysis: ${text}`;
+            }
+        }
+
+        function setProcessStatus(_text) {
+            // intentionally hidden per UX requirement
+        }
+
+        function setVisionStatus(text) {
+            if (visionProgressText) {
+                visionProgressText.textContent = `Vision analysis: ${text}`;
+            }
+        }
+
+        async function uploadVideoInChunks() {
+            const file = videoFileInput.files && videoFileInput.files[0];
+            if (!file) {
+                setVideoUploadStatus("Please select a video file first.");
+                return;
+            }
+            localTimelineWindows = null;
+            metricsJsonFileName.textContent = "";
+            selectedMetricsSource = "video";
+            metricsSourceSelect.value = "video";
+
+            const chunkSize = 8 * 1024 * 1024;
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            setVideoUploadProgress(0);
+            clearDownloadStates();
+            latestTranscriptText = "";
+
+            setVideoUploadStatus(`Initializing upload task (${formatFileSize(file.size)})...`);
+
+            const initResp = await fetch("/api/video/upload/init", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    filename: file.name,
+                    file_size: file.size,
+                    total_chunks: totalChunks,
+                    chunk_size: chunkSize
+                })
+            });
+
+            if (!initResp.ok) {
+                let detail = "Failed to initialize upload";
+                try {
+                    const err = await initResp.json();
+                    detail = err.detail || detail;
+                } catch (_error) {
+                    // ignore
+                }
+                throw new Error(detail);
+            }
+
+            const initData = await initResp.json();
+            const uploadId = initData.upload_id;
+            if (!uploadId) {
+                throw new Error("Failed to create upload task.");
+            }
+
+            for (let index = 0; index < totalChunks; index += 1) {
+                const start = index * chunkSize;
+                const end = Math.min(file.size, start + chunkSize);
+                const chunkBlob = file.slice(start, end);
+                const form = new FormData();
+                form.append("upload_id", uploadId);
+                form.append("chunk_index", String(index));
+                form.append("chunk", chunkBlob, `${file.name}.part${index}`);
+
+                const chunkResp = await fetch("/api/video/upload/chunk", {
+                    method: "POST",
+                    body: form
+                });
+                if (!chunkResp.ok) {
+                    let detail = "Chunk upload failed";
+                    try {
+                        const err = await chunkResp.json();
+                        detail = err.detail || detail;
+                    } catch (_error) {
+                        // ignore
+                    }
+                    throw new Error(detail);
+                }
+
+                const progressPercent = ((index + 1) / totalChunks) * 100;
+                setVideoUploadProgress(progressPercent);
+                setVideoUploadStatus(`Video upload progress: ${index + 1}/${totalChunks}`);
+            }
+
+            const doneResp = await fetch("/api/video/upload/complete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ upload_id: uploadId })
+            });
+            if (!doneResp.ok) {
+                let detail = "Video merge failed";
+                try {
+                    const err = await doneResp.json();
+                    detail = err.detail || detail;
+                } catch (_error) {
+                    // ignore
+                }
+                throw new Error(detail);
+            }
+            const doneData = await doneResp.json();
+            currentVideoUploadId = uploadId;
+            selectedMetricsSource = "video";
+            metricsSourceSelect.value = "video";
+            metricsJsonFileName.textContent = "";
+            setVideoUploadProgress(100);
+            setVideoUploadStatus(`Upload complete: ${formatFileSize(doneData.video_size_bytes || file.size)}. Vision analysis started.`);
+            currentVisionStatus = "queued";
+            setVisionProgress(0);
+            setVisionStatus("queued...");
+            setMetricsWaiting(true, "Detection is not complete yet. Please wait for vision analysis.");
+            segmentAvailabilityCache.clear();
+            refreshTimelineAvailability().catch((error) => console.error(error));
+            pollVisionAnalysisProgress(uploadId).catch((error) => {
+                console.error(error);
+            });
+        }
+
+        async function pollVisionAnalysisProgress(uploadId) {
+            const myToken = Date.now();
+            visionPollingToken = myToken;
+
+            while (visionPollingToken === myToken) {
+                const resp = await fetch(`/api/video/vision_progress/${encodeURIComponent(uploadId)}`);
+                if (!resp.ok) {
+                    setVisionStatus("status check failed.");
+                    return;
+                }
+                const data = await resp.json();
+                const status = data.status || "idle";
+                const percent = Number(data.percent || 0);
+                const current = Number(data.current || 0);
+                const total = Number(data.total || 0);
+                currentVisionStatus = status;
+                setVisionProgress(percent);
+                if (status === "queued") {
+                    setVisionStatus("queued...");
+                    setMetricsWaiting(true, "Detection is not complete yet. Please wait for vision analysis.");
+                } else if (status === "processing") {
+                    setVisionStatus("processing...");
+                    setMetricsWaiting(true, "Detection is in progress, please wait...");
+                } else if (status === "completed") {
+                    setVisionStatus("completed.");
+                    setVisionProgress(100);
+                    setVisionDownloads(uploadId);
+                    setMetricsWaiting(false);
+                    segmentAvailabilityCache.clear();
+                    refreshTimelineAvailability().catch((error) => console.error(error));
+                    return;
+                } else if (status === "failed") {
+                    const err = data.error || "unknown error";
+                    setVisionStatus(`failed: ${err}`);
+                    setMetricsWaiting(true, "Vision analysis failed. Please re-upload or retry.");
+                    return;
+                } else {
+                    setVisionStatus("unknown status.");
+                    setMetricsWaiting(true, "Vision analysis status is unknown. Please try again later.");
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        async function waitForVisionAnalysisCompletion(uploadId, timeoutMs = 60 * 60 * 1000) {
+            const start = Date.now();
+            setVisionStatus("processing...");
+            while (Date.now() - start < timeoutMs) {
+                const resp = await fetch(`/api/video/vision_progress/${encodeURIComponent(uploadId)}`);
+                if (!resp.ok) {
+                    throw new Error("Failed to query vision analysis status.");
+                }
+                const data = await resp.json();
+                const status = String(data.status || "");
+                currentVisionStatus = status;
+                const percent = Number(data.percent || 0);
+                setVisionProgress(percent);
+                if (status === "completed") {
+                    setVisionProgress(100);
+                    setVisionDownloads(uploadId);
+                    setVisionStatus("completed.");
+                    return;
+                }
+                if (status === "failed") {
+                    setVisionStatus("failed.");
+                    throw new Error(`Vision analysis failed: ${data.error || "unknown error"}`);
+                }
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+            throw new Error("Timed out waiting for vision analysis.");
+        }
+
+        async function extractAudioFromVideo() {
+            if (!currentVideoUploadId) {
+                setVideoUploadStatus("Please upload a video before extracting audio.");
+                return;
+            }
+
+            setVideoUploadStatus("Audio extraction progress: 0/1");
+            const resp = await fetch("/api/video/extract_audio", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    upload_id: currentVideoUploadId,
+                    output_format: "mp3"
+                })
+            });
+            if (!resp.ok) {
+                let detail = "Audio extraction failed";
+                try {
+                    const err = await resp.json();
+                    detail = err.detail || detail;
+                } catch (_error) {
+                    // ignore
+                }
+                throw new Error(detail);
+            }
+            const data = await resp.json();
+            downloadUrls.audio = data.download_url || "";
+            updateDownloadVisuals();
+            updatePipelineProgress({ audio: 1 });
+            const extractProgress = data.progress || { current: 1, total: 1 };
+            setVideoUploadStatus(`Audio extraction progress: ${extractProgress.current}/${extractProgress.total} (completed, ${data.audio_filename || "audio.mp3"})`);
+        }
+
+        async function transcribeAudio() {
+            if (!currentVideoUploadId) {
+                setVideoUploadStatus("Please upload a video and extract audio before transcription.");
+                return;
+            }
+
+            setVideoUploadStatus("Transcription progress: 0/1");
+            let done = false;
+            let requestError = "";
+            let data = null;
+
+            const requestPromise = (async () => {
+                const resp = await fetch("/api/video/transcribe_audio", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ upload_id: currentVideoUploadId })
+                });
+                if (!resp.ok) {
+                    let detail = "Audio transcription failed";
+                    try {
+                        const err = await resp.json();
+                        detail = err.detail || detail;
+                    } catch (_error) {
+                        // ignore
+                    }
+                    throw new Error(detail);
+                }
+                return resp.json();
+            })();
+
+            requestPromise
+                .then((result) => {
+                    data = result;
+                })
+                .catch((error) => {
+                    requestError = error.message || "Audio transcription failed";
+                })
+                .finally(() => {
+                    done = true;
+                });
+
+            while (!done) {
+                try {
+                    const progressResp = await fetch(`/api/video/transcribe_progress/${encodeURIComponent(currentVideoUploadId)}`);
+                    if (progressResp.ok) {
+                        const progress = await progressResp.json();
+                        const current = progress.current || 0;
+                        const total = progress.total || 1;
+                        setVideoUploadStatus(`Transcription progress: ${current}/${total}`);
+                        if (total > 0) {
+                            updatePipelineProgress({ transcribe: Math.max(0, Math.min(1, current / total)) });
+                        }
+                    }
+                } catch (_error) {
+                    // keep polling
+                }
+                await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+
+            if (requestError) {
+                throw new Error(requestError);
+            }
+            if (!data) {
+                throw new Error("Audio transcription failed");
+            }
+            latestTranscriptText = data.text || "";
+            latestTranscriptSegments = Array.isArray(data.segments) ? data.segments : [];
+            downloadUrls.transcript = data.download_url || "";
+            updateDownloadVisuals();
+            const segmentCount = (data.segments || []).length;
+            const transcribeProgress = data.progress || { current: 1, total: 1 };
+            updatePipelineProgress({ transcribe: 1 });
+            setVideoUploadStatus(`Transcription progress: ${transcribeProgress.current}/${transcribeProgress.total} (completed, ${segmentCount} segments, Simplified Chinese)`);
+        }
+
+        function normalizeRoadmapItems(rawItems) {
+            if (!Array.isArray(rawItems)) {
+                return [];
+            }
+            return rawItems
+                .map((item, idx) => ({
+                    id: Number(item?.id ?? idx + 1),
+                    time: String(item?.time ?? "").trim(),
+                    phase: String(item?.phase ?? "").trim(),
+                    intent: String(item?.intent ?? "").trim()
+                }))
+                .filter((item) => item.time && item.phase && item.intent);
+        }
+
+        function availabilityKey(source, timeRange) {
+            return `${source}::${timeRange}`;
+        }
+
+        function setTimelineCardDisabled(card, disabled) {
+            card.disabled = disabled;
+            card.classList.toggle("opacity-50", disabled);
+            card.classList.toggle("cursor-not-allowed", disabled);
+            card.classList.toggle("border-slate-200", !disabled);
+            card.classList.toggle("bg-slate-50", !disabled);
+            card.classList.toggle("hover:border-indigo-300", !disabled);
+            card.classList.toggle("hover:bg-indigo-50", !disabled);
+            card.classList.toggle("border-slate-100", disabled);
+            card.classList.toggle("bg-slate-100", disabled);
+        }
+
+        function applyTimelineAvailability() {
+            const source = selectedMetricsSource;
+            document.querySelectorAll(".timeline-item").forEach((card) => {
+                const timeRange = card.dataset.time || "";
+                const key = availabilityKey(source, timeRange);
+                const available = segmentAvailabilityCache.get(key);
+                if (available === false) {
+                    setTimelineCardDisabled(card, true);
+                } else {
+                    setTimelineCardDisabled(card, false);
+                }
+            });
+        }
+
+        function localSourceHasDataForRange(timeRange) {
+            if (!Array.isArray(localTimelineWindows)) {
+                return false;
+            }
+            const [startText, endText] = String(timeRange).split("-").map((x) => x.trim());
+            const startSec = parseMmss(startText);
+            const endSec = parseMmss(endText);
+            const points = aligned30sPoints(startSec, endSec);
+            if (!points.length) {
+                return false;
+            }
+            const byEnd = new Set(
+                localTimelineWindows.map((item) => Math.round(Number(item?.end_second || 0)))
+            );
+            return points.some((p) => byEnd.has(p));
+        }
+
+        async function hasTimelineDataForRange(timeRange, source) {
+            const key = availabilityKey(source, timeRange);
+            if (segmentAvailabilityCache.has(key)) {
+                return segmentAvailabilityCache.get(key);
+            }
+            let available = false;
+            if (source === "mock") {
+                available = true;
+            } else if (source === "local") {
+                available = localSourceHasDataForRange(timeRange);
+            } else if (source === "video") {
+                if (!(currentVideoUploadId && currentVisionStatus === "completed")) {
+                    available = false;
+                } else {
+                    try {
+                        const resp = await fetch("/api/metrics_timeline/video", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                upload_id: currentVideoUploadId,
+                                time_range: timeRange,
+                                subject_name: subjectSelect.value || "Biology"
+                            })
+                        });
+                        if (resp.ok) {
+                            const payload = await resp.json();
+                            available = Array.isArray(payload?.labels) && payload.labels.length > 0;
+                        }
+                    } catch (_error) {
+                        available = false;
+                    }
+                }
+            }
+            segmentAvailabilityCache.set(key, available);
+            return available;
+        }
+
+        async function refreshTimelineAvailability() {
+            if (!Array.isArray(currentRoadmapItems) || !currentRoadmapItems.length) {
+                return;
+            }
+            const source = selectedMetricsSource;
+            const myToken = Date.now();
+            availabilityRefreshToken = myToken;
+            await Promise.all(
+                currentRoadmapItems.map((item) => hasTimelineDataForRange(item.time, source))
+            );
+            if (availabilityRefreshToken !== myToken) {
+                return;
+            }
+            applyTimelineAvailability();
+        }
+
+        function renderTimeline(items) {
+            currentRoadmapItems = Array.isArray(items) ? items : [];
+            selectedSegment = null;
+            timelineContainer.innerHTML = "";
+            const wrapper = document.createElement("div");
+            wrapper.className = "relative pl-5 space-y-3";
+            const line = document.createElement("div");
+            line.className = "absolute left-[7px] top-1 bottom-1 w-[2px] bg-slate-200";
+            wrapper.appendChild(line);
+
+            items.forEach((item) => {
+                const card = document.createElement("button");
+                card.type = "button";
+                card.className = "timeline-item relative w-full text-left rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 hover:border-indigo-300 hover:bg-indigo-50 transition";
+                card.dataset.time = item.time;
+                card.dataset.intent = item.intent;
+                card.innerHTML = `
+                    <span class="absolute -left-[17px] top-4 w-3 h-3 rounded-full border-2 border-white bg-slate-300"></span>
+                    <div class="text-[11px] text-slate-500">${item.time}</div>
+                    <div class="text-xs font-semibold text-slate-800 mt-1">${item.phase}</div>
+                    <div class="text-xs text-slate-600 mt-0.5">${item.intent}</div>
+                `;
+                card.addEventListener("click", () => selectSegment(item, card));
+                wrapper.appendChild(card);
+            });
+
+            timelineContainer.appendChild(wrapper);
+            applyTimelineAvailability();
+            refreshTimelineAvailability().catch((error) => console.error(error));
+        }
+
+        function summarizeTimelineFeatures(data) {
+            const average = (arr) => arr.reduce((acc, val) => acc + val, 0) / arr.length;
+            const icap = data.icap || {};
+            const behavioral = data.behavioral || {};
+            const avgOffTask = ((average(icap["Off-task"] || [0]) * 100).toFixed(1));
+            const avgDisruptive = ((average(behavioral["Disruptive"] || [0]) * 100).toFixed(1));
+            const lastOffTask = (icap["Off-task"] || [0]).slice(-1)[0] * 100;
+            const firstOffTask = (icap["Off-task"] || [0])[0] * 100;
+            const trend = lastOffTask >= firstOffTask ? "upward" : "downward";
+            return `Within ${data.time_range}, Off-task avg is ${avgOffTask}% (trend: ${trend}), and Disruptive avg is ${avgDisruptive}%.`;
+        }
+
+        function renderCurrentContextSummary(item) {
+            const subject = subjectSelect.value || "Biology";
+            if (!item) {
+                featureSummary.textContent = `Subject: ${subject} | Time Range: - | Teaching Intent: -`;
+                return;
+            }
+            featureSummary.textContent = `Subject: ${subject} | Time Range: ${item.time} | Teaching Intent: ${item.intent}`;
+        }
+
+        async function loadClassMemoryFile() {
+            const file = classMemoryInput.files && classMemoryInput.files[0];
+            if (!file) {
+                return;
+            }
+            const raw = await file.text();
+            let normalized = raw.trim();
+            if (file.name.toLowerCase().endsWith(".json")) {
+                const parsed = JSON.parse(raw);
+                normalized = JSON.stringify(parsed, null, 2);
+            }
+            classMemoryContext = normalized;
+            classMemoryFilename = file.name;
+            classMemoryFileName.textContent = `Class memory: ${file.name}`;
+        }
+
+        function parseMmss(text) {
+            const [m, s] = String(text || "").split(":").map((v) => Number(v || 0));
+            return m * 60 + s;
+        }
+
+        function toMmss(sec) {
+            const safe = Math.max(0, Number(sec || 0));
+            const m = Math.floor(safe / 60);
+            const s = Math.floor(safe % 60);
+            return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        }
+
+        function aligned30sPoints(startSec, endSec) {
+            if (endSec <= startSec) return [];
+            let first = Math.ceil(startSec / 30) * 30;
+            if (first <= startSec) first += 30;
+            const points = [];
+            for (let p = first; p <= endSec; p += 30) points.push(p);
+            return points;
+        }
+
+        function buildTimelineFromLocalWindows(windows, timeRange) {
+            const [startText, endText] = String(timeRange).split("-").map((x) => x.trim());
+            const startSec = parseMmss(startText);
+            const endSec = parseMmss(endText);
+            const points = aligned30sPoints(startSec, endSec);
+            if (!points.length) {
+                throw new Error("No aligned 30-second windows in selected time range.");
+            }
+            const byEnd = new Map();
+            for (const item of windows) {
+                const endSecond = Math.round(Number(item?.end_second || 0));
+                byEnd.set(endSecond, item);
+            }
+            const labels = [];
+            const behavioral = { Active: [], Passive: [], Disruptive: [] };
+            const emotional = { Positive: [], Neutral: [], Frustrated: [] };
+            const icap = { Interactive: [], Constructive: [], Active: [], Passive: [], "Off-task": [] };
+
+            for (const p of points) {
+                const row = byEnd.get(p);
+                if (!row) continue;
+                labels.push(toMmss(p));
+                const b = row.behavior_percentages || {};
+                const e = row.expression_percentages || {};
+                const c = row.icap_percentages || {};
+                const bA = Number(b.High || 0) / 100;
+                const bP = Number(b.Medium || 0) / 100;
+                const bD = Number(b.Low || 0) / 100;
+                behavioral.Active.push(bA);
+                behavioral.Passive.push(bP);
+                behavioral.Disruptive.push(bD);
+                emotional.Positive.push(Number(e.Positive || 0) / 100);
+                emotional.Neutral.push(Number(e.Neutral || 0) / 100);
+                emotional.Frustrated.push(Number(e.Negative || 0) / 100);
+                if (Object.keys(c).length) {
+                    icap.Interactive.push(Number(c.Interactive || 0) / 100);
+                    icap.Constructive.push(Number(c.Constructive || 0) / 100);
+                    icap.Active.push(Number(c.Active || 0) / 100);
+                    icap.Passive.push(Number(c.Passive || 0) / 100);
+                    icap["Off-task"].push(Number(c["Off-task"] || 0) / 100);
+                } else {
+                    const i = Math.max(0, Math.min(1, bA * 0.45 + (Number(e.Positive || 0) / 100) * 0.2));
+                    const cc = Math.max(0, Math.min(1, bA * 0.25 + (Number(e.Neutral || 0) / 100) * 0.15));
+                    const a = Math.max(0, Math.min(1, bA * 0.2 + bP * 0.25));
+                    const o = Math.max(0, Math.min(1, bD * 0.7 + (Number(e.Negative || 0) / 100) * 0.2));
+                    const pa = Math.max(0, 1 - i - cc - a - o);
+                    icap.Interactive.push(i);
+                    icap.Constructive.push(cc);
+                    icap.Active.push(a);
+                    icap.Passive.push(pa);
+                    icap["Off-task"].push(o);
+                }
+            }
+
+            if (!labels.length) {
+                throw new Error("No matching window data for this time range in local JSON.");
+            }
+            return {
+                source: "local-json",
+                time_range: timeRange,
+                labels,
+                behavioral,
+                emotional,
+                icap,
+            };
+        }
+
+        function buildDimensionDatasets(dimensionKey, timelineData) {
+            const behavioral = timelineData.behavioral || {};
+            const emotional = timelineData.emotional || {};
+            const icap = timelineData.icap || {};
+
+            if (dimensionKey === "behavioral") {
+                return [
+                    { label: "Active", key: "Active", color: "#16a34a", source: behavioral, scale: 100 },
+                    { label: "Passive", key: "Passive", color: "#94a3b8", source: behavioral, scale: 100 },
+                    { label: "Disruptive", key: "Disruptive", color: "#ef4444", source: behavioral, scale: 100 }
+                ];
+            }
+            if (dimensionKey === "emotional") {
+                return [
+                    { label: "Positive", key: "Positive", color: "#22c55e", source: emotional, scale: 100 },
+                    { label: "Neutral", key: "Neutral", color: "#94a3b8", source: emotional, scale: 100 },
+                    { label: "Frustrated", key: "Frustrated", color: "#f43f5e", source: emotional, scale: 100 }
+                ];
+            }
+            return [
+                { label: "Interactive", key: "Interactive", color: "#8b5cf6", source: icap, scale: 100 },
+                { label: "Constructive", key: "Constructive", color: "#2563eb", source: icap, scale: 100 },
+                { label: "Active", key: "Active", color: "#22c55e", source: icap, scale: 100 },
+                { label: "Passive", key: "Passive", color: "#94a3b8", source: icap, scale: 100 },
+                { label: "Off-task", key: "Off-task", color: "#ef4444", source: icap, scale: 100 }
+            ];
+        }
+
+        function renderSingleDimensionChart(dimensionKey, scrollEl, innerEl, canvasEl) {
+            if (!currentTimelineData) {
+                return;
+            }
+
+            const ctx = canvasEl;
+            const labels = currentTimelineData.labels;
+            const perTimeSlotWidth = 80;
+            const targetWidth = Math.max(
+                scrollEl.clientWidth,
+                labels.length * perTimeSlotWidth + 40
+            );
+            innerEl.style.width = `${targetWidth}px`;
+
+            const configSeries = buildDimensionDatasets(dimensionKey, currentTimelineData);
+            const datasets = configSeries.map((seriesDef) => {
+                const rawSeries = seriesDef.source[seriesDef.key] || [];
+                return {
+                    label: seriesDef.label,
+                    stack: dimensionKey,
+                    data: rawSeries.map((v) => Number((((v || 0) * seriesDef.scale)).toFixed(1))),
+                    backgroundColor: seriesDef.color,
+                    borderRadius: 2,
+                    barThickness: 36,
+                    maxBarThickness: 36,
+                    categoryPercentage: 0.95,
+                    barPercentage: 0.98
+                };
+            });
+
+            if (!datasets.length) {
+                return;
+            }
+
+            if (chartInstances[dimensionKey]) {
+                chartInstances[dimensionKey].destroy();
+            }
+
+            chartInstances[dimensionKey] = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: {
+                            stacked: true,
+                            min: 0,
+                            max: 100,
+                            ticks: { callback: (value) => `${value}%` }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTripleDimensionChart() {
+            renderSingleDimensionChart("behavioral", behavioralChartScroll, behavioralChartInner, behavioralChartCanvas);
+            renderSingleDimensionChart("emotional", emotionalChartScroll, emotionalChartInner, emotionalChartCanvas);
+            renderSingleDimensionChart("cognitive", cognitiveChartScroll, cognitiveChartInner, cognitiveChartCanvas);
+        }
+
+        async function fetchTimelineMetrics(timeRange) {
+            const source = selectedMetricsSource;
+            if (source === "local") {
+                if (!Array.isArray(localTimelineWindows)) {
+                        throw new Error("Please import local timeline JSON first.");
+                }
+                return buildTimelineFromLocalWindows(localTimelineWindows, timeRange);
+            }
+
+            let resp;
+            if (source === "video") {
+                if (!currentVideoUploadId) {
+                    throw new Error("Please upload a video and finish vision analysis first.");
+                }
+                if (currentVisionStatus !== "completed") {
+                    throw new Error("Vision analysis is not completed yet. Please wait.");
+                }
+                resp = await fetch("/api/metrics_timeline/video", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        upload_id: currentVideoUploadId,
+                        time_range: timeRange,
+                        subject_name: subjectSelect.value || "Biology"
+                    })
+                });
+            } else {
+                resp = await fetch(`/api/metrics_timeline?time_range=${encodeURIComponent(timeRange)}`);
+            }
+            if (!resp.ok) {
+                let detail = "Failed to fetch timeline data";
+                try {
+                    const err = await resp.json();
+                    detail = err.detail || detail;
+                } catch (_error) {
+                    // ignore
+                }
+                throw new Error(detail);
+            }
+            return resp.json();
+        }
+
+        async function selectSegment(item, cardElement) {
+            if (cardElement.disabled) {
+                return;
+            }
+            document.querySelectorAll(".timeline-item").forEach((el) => {
+                el.classList.remove("border-indigo-500", "bg-indigo-50", "ring-1", "ring-indigo-200");
+                const dot = el.querySelector("span");
+                if (dot) {
+                    dot.classList.remove("bg-indigo-500");
+                    dot.classList.add("bg-slate-300");
+                }
+            });
+
+            cardElement.classList.add("border-indigo-500", "bg-indigo-50", "ring-1", "ring-indigo-200");
+            const dot = cardElement.querySelector("span");
+            if (dot) {
+                dot.classList.remove("bg-slate-300");
+                dot.classList.add("bg-indigo-500");
+            }
+
+            selectedSegment = item;
+            segmentInfo.textContent = `Current segment: ${item.phase} | Time: ${item.time} | Intent: ${item.intent}`;
+            renderCurrentContextSummary(item);
+            if (selectedMetricsSource === "video" && currentVideoUploadId && currentVisionStatus !== "completed") {
+                setMetricsWaiting(true, "Detection is not complete yet. Please wait for vision analysis.");
+                return;
+            }
+
+            try {
+                const timelineData = await fetchTimelineMetrics(item.time);
+                currentTimelineData = timelineData;
+                currentFeatureSummary = summarizeTimelineFeatures(timelineData);
+                setMetricsWaiting(false);
+                renderTripleDimensionChart();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function parseInstructionalDesign() {
+            if (!idDocxInput.files || idDocxInput.files.length === 0) {
+                setProcessStatus("Please select an instructional design .docx file.");
+                setParseDownloadButton("");
+                return false;
+            }
+            setProcessStatus("Parsing instructional design...");
+            setParseDownloadButton("");
+            updatePipelineProgress({ structured: 0.2 });
+            try {
+                const formData = new FormData();
+                formData.append("instructional_design_file", idDocxInput.files[0]);
+                formData.append("transcript_text", latestTranscriptText || "");
+                formData.append("transcript_timeline_json", JSON.stringify(latestTranscriptSegments || []));
+                formData.append("subject_name", subjectSelect.value || "Biology");
+                const resp = await fetch("/api/parse_id", {
+                    method: "POST",
+                    body: formData
+                });
+                if (!resp.ok) {
+                    let detail = "Parsing failed";
+                    try {
+                        const errorPayload = await resp.json();
+                        detail = errorPayload.detail || detail;
+                    } catch (_error) {
+                        // ignore json parse error
+                    }
+                    throw new Error(detail);
+                }
+                const data = await resp.json();
+                const roadmap = normalizeRoadmapItems(data.roadmap || []);
+                renderTimeline(roadmap);
+                setProcessStatus(`Parsing completed: ${roadmap.length} segments.`);
+                setParseDownloadButton(data.download_url || "");
+                return true;
+            } catch (error) {
+                setProcessStatus(`Parsing failed: ${error.message}`);
+                setParseDownloadButton("");
+                console.error(error);
+                return false;
+            }
+        }
+
+        async function runDataProcessingPipeline() {
+            const videoFile = videoFileInput.files && videoFileInput.files[0];
+            const idFile = idDocxInput.files && idDocxInput.files[0];
+            if (!videoFile) {
+                setProcessStatus("Please select a video file first.");
+                return;
+            }
+            if (!idFile) {
+                setProcessStatus("Please select an instructional design file first.");
+                return;
+            }
+            if (dataProcessRunning) {
+                return;
+            }
+            clearDownloadStates();
+            setPipelineProgress(0);
+            setDataProcessButtonLoading(true);
+            try {
+                setProcessStatus("Step 1/4: Upload video and start detection...");
+                await uploadVideoInChunks();
+
+                setProcessStatus("Step 2/4: Extract audio...");
+                await extractAudioFromVideo();
+
+                setProcessStatus("Step 3/4: Transcribe audio and trigger ICAP analysis...");
+                await transcribeAudio();
+
+                setProcessStatus("Step 4/4: Structured instructional design parsing...");
+                const structuredOk = await parseInstructionalDesign();
+                if (!structuredOk) {
+                    throw new Error("Structured instructional design parsing failed.");
+                }
+                updatePipelineProgress({ structured: 1 });
+
+                setProcessStatus("Waiting for vision analysis to complete...");
+                if (currentVideoUploadId) {
+                    await waitForVisionAnalysisCompletion(currentVideoUploadId);
+                }
+
+                setPipelineProgress(100);
+                updateDownloadVisuals();
+
+                setProcessStatus("Data processing completed: files are ready for download and charts.");
+            } catch (error) {
+                setProcessStatus(`Data processing failed: ${error.message || "please retry"}`);
+                console.error(error);
+            } finally {
+                setDataProcessButtonLoading(false);
+            }
+        }
+
+        function addMessage(role, text) {
+            const wrapper = document.createElement("div");
+            wrapper.className = role === "user" ? "flex justify-end" : "flex justify-start";
+            const bubble = document.createElement("div");
+            bubble.className = role === "user"
+                ? "max-w-[85%] bg-indigo-600 text-white text-xs leading-relaxed rounded-xl rounded-tr-sm px-3 py-2"
+                : "max-w-[90%] bg-slate-100 text-slate-800 text-xs leading-relaxed rounded-xl rounded-tl-sm px-3 py-2 whitespace-pre-wrap";
+            bubble.textContent = text;
+            wrapper.appendChild(bubble);
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return bubble;
+        }
+
+        async function loadRoadmapFromLocalJsonFile() {
+            const file = roadmapJsonInput.files && roadmapJsonInput.files[0];
+            if (!file) {
+                roadmapUploadStatus.textContent = "Please select a JSON file first.";
+                return;
+            }
+
+            try {
+                const content = await file.text();
+                const parsed = JSON.parse(content);
+                const roadmap = normalizeRoadmapItems(parsed);
+                if (!roadmap.length) {
+                    throw new Error("Invalid JSON structure: expected array with time/phase/intent.");
+                }
+                renderTimeline(roadmap);
+                roadmapUploadStatus.textContent = `Local JSON loaded successfully: ${roadmap.length} segments.`;
+                setProcessStatus("Rendered segments from local JSON.");
+                setParseDownloadButton("");
+            } catch (error) {
+                roadmapUploadStatus.textContent = `Failed to load local JSON: ${error.message}`;
+                console.error(error);
+            }
+        }
+
+        async function runOptimize(userPrompt = "", mode = "chat") {
+            if (!selectedSegment || !currentTimelineData) {
+                addMessage("assistant", "Please select a lesson segment on the left before generating suggestions.");
+                return;
+            }
+
+            if (userPrompt) {
+                addMessage("user", userPrompt);
+            }
+
+            const assistantBubble = addMessage("assistant", "");
+            const payload = {
+                mode,
+                subject_name: subjectSelect.value || "Biology",
+                teaching_intent: selectedSegment.intent,
+                selected_time_range: selectedSegment.time,
+                timeline_features: currentFeatureSummary || "No summary available",
+                class_memory_context: classMemoryContext || "(No class baseline memory provided)",
+                class_memory_filename: classMemoryFilename || "",
+                user_prompt: userPrompt,
+                metrics: currentTimelineData
+            };
+
+            const resp = await fetch("/api/optimize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok || !resp.body) {
+                let detail = "Failed to generate suggestions. Please try again later.";
+                try {
+                    const errorPayload = await resp.json();
+                    if (errorPayload?.detail) {
+                        if (typeof errorPayload.detail === "string") {
+                            detail = `Suggestion generation failed: ${errorPayload.detail}`;
+                        } else {
+                            detail = `Suggestion generation failed: ${JSON.stringify(errorPayload.detail)}`;
+                        }
+                    }
+                } catch (_error) {
+                    // ignore parse errors
+                }
+                assistantBubble.textContent = detail;
+                return;
+            }
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) {
+                    break;
+                }
+                buffer += decoder.decode(value, { stream: true });
+                const chunks = buffer.split("\n\n");
+                buffer = chunks.pop() || "";
+
+                for (const chunk of chunks) {
+                    const line = chunk.split("\n").find((row) => row.startsWith("data: "));
+                    if (!line) {
+                        continue;
+                    }
+                    const eventData = line.slice(6).trim();
+                    if (eventData === "[DONE]") {
+                        continue;
+                    }
+                    try {
+                        const parsed = JSON.parse(eventData);
+                        if (parsed.delta) {
+                            assistantBubble.textContent += parsed.delta;
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } catch (error) {
+                        console.error("SSE parse failed:", error);
+                    }
+                }
+            }
+        }
+
+        videoPickerBtn.addEventListener("click", () => videoFileInput.click());
+        idDocxPickerBtn.addEventListener("click", () => idDocxInput.click());
+
+        videoFileInput.addEventListener("change", () => {
+            const file = videoFileInput.files && videoFileInput.files[0];
+            videoFileName.textContent = file ? file.name : "No video selected";
+            localTimelineWindows = null;
+            metricsJsonFileName.textContent = "";
+            selectedMetricsSource = "video";
+            metricsSourceSelect.value = "video";
+            currentVideoUploadId = "";
+            visionPollingToken = 0;
+            currentVisionStatus = "idle";
+            clearDownloadStates();
+            latestTranscriptText = "";
+            latestTranscriptSegments = [];
+            setVideoUploadProgress(0);
+            setVisionProgress(0);
+            setVisionStatus("pending");
+            setMetricsWaiting(true, file ? "Video selected. Please upload and wait for vision analysis." : "Please upload a video and wait for vision analysis.");
+            segmentAvailabilityCache.clear();
+            refreshTimelineAvailability().catch((error) => console.error(error));
+            setVideoUploadStatus(file
+                ? `Video selected: ${formatFileSize(file.size)}. Click data processing to start.`
+                : "Please select both a video and an instructional design file, then click data processing.");
+        });
+
+        idDocxInput.addEventListener("change", () => {
+            const file = idDocxInput.files && idDocxInput.files[0];
+            idDocxFileName.textContent = file ? file.name : "No instructional design file selected";
+            setProcessStatus(file ? "Instructional design file selected." : "Instructional design not parsed.");
+            setParseDownloadButton("");
+        });
+
+        roadmapJsonUploadBtn.addEventListener("click", () => roadmapJsonInput.click());
+        metricsJsonUploadBtn.addEventListener("click", () => metricsJsonInput.click());
+        classMemoryUploadBtn.addEventListener("click", () => classMemoryInput.click());
+
+        classMemoryInput.addEventListener("change", async () => {
+            try {
+                await loadClassMemoryFile();
+            } catch (error) {
+                classMemoryContext = "";
+                classMemoryFilename = "";
+                classMemoryFileName.textContent = `Failed to load class memory: ${error.message}`;
+            }
+        });
+
+        subjectSelect.addEventListener("change", () => {
+            renderCurrentContextSummary(selectedSegment);
+        });
+
+        metricsSourceSelect.addEventListener("change", async () => {
+            selectedMetricsSource = metricsSourceSelect.value || "video";
+            segmentAvailabilityCache.clear();
+            await refreshTimelineAvailability();
+
+            if (selectedMetricsSource === "video") {
+                if (currentVisionStatus !== "completed") {
+                    setMetricsWaiting(true, "Video data source is not ready. Finish vision analysis first.");
+                }
+            } else if (selectedMetricsSource === "local") {
+                if (!Array.isArray(localTimelineWindows)) {
+                    setMetricsWaiting(true, "Please import local timeline JSON first.");
+                } else {
+                    setMetricsWaiting(false);
+                }
+            } else {
+                setMetricsWaiting(false);
+            }
+
+            if (selectedSegment) {
+                const selectedCard = Array.from(document.querySelectorAll(".timeline-item"))
+                    .find((el) => el.dataset.time === selectedSegment.time && el.dataset.intent === selectedSegment.intent);
+                if (selectedCard && !selectedCard.disabled) {
+                    await selectSegment(selectedSegment, selectedCard);
+                } else {
+                    renderCurrentContextSummary(selectedSegment);
+                }
+            }
+        });
+
+        roadmapJsonInput.addEventListener("change", async () => {
+            await loadRoadmapFromLocalJsonFile();
+        });
+
+        metricsJsonInput.addEventListener("change", async () => {
+            const file = metricsJsonInput.files && metricsJsonInput.files[0];
+            if (!file) {
+                return;
+            }
+            try {
+                const content = await file.text();
+                const parsed = JSON.parse(content);
+                if (!Array.isArray(parsed)) {
+                    throw new Error("Please upload a window-array JSON (classroom_30s_stats.json).");
+                }
+                localTimelineWindows = parsed;
+                metricsJsonFileName.textContent = file.name;
+                selectedMetricsSource = "local";
+                metricsSourceSelect.value = "local";
+                segmentAvailabilityCache.clear();
+                await refreshTimelineAvailability();
+                setMetricsWaiting(false);
+                renderCurrentContextSummary(selectedSegment);
+                if (selectedSegment) {
+                    const timelineData = await fetchTimelineMetrics(selectedSegment.time);
+                    currentTimelineData = timelineData;
+                    currentFeatureSummary = summarizeTimelineFeatures(timelineData);
+                    renderTripleDimensionChart();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        dataProcessBtn.addEventListener("click", async () => {
+            await runDataProcessingPipeline();
+        });
+
+        document.getElementById("generateStrategyBtn").addEventListener("click", async () => {
+            await runOptimize("Please generate teaching design optimization suggestions for the current segment.", "optimize");
+        });
+
+        document.getElementById("sendChatBtn").addEventListener("click", async () => {
+            const input = document.getElementById("chatInput");
+            const text = input.value.trim();
+            if (!text) {
+                return;
+            }
+            input.value = "";
+            await runOptimize(text, "chat");
+        });
+
+        document.getElementById("chatInput").addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("sendChatBtn").click();
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            if (currentTimelineData) {
+                renderTripleDimensionChart();
+            }
+        });
+
+        setParseDownloadButton("");
+        clearDownloadStates();
+        setVisionProgress(0);
+        setVisionStatus("pending");
+        renderCurrentContextSummary(null);
+        setMetricsWaiting(true, "Please upload a video and wait for vision analysis to complete.");
+    </script>
+</body>
+</html>

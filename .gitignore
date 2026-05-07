@@ -1,0 +1,9 @@
+__pycache__/
+generated/
+llm.private.json
+测试案例/
+*测试*/
+*案例*/
+test_case/
+test_cases/
+test-cases/

@@ -1,0 +1,22 @@
+{
+  "active_profile": "gpt4o",
+  "asr_profile": "gpt4o",
+  "asr_model": "gpt-4o-mini-transcribe",
+  "profiles": {
+    "gpt4o": {
+      "api_key": "replace-with-your-openai-key",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o"
+    },
+    "deepseekR1": {
+      "api_key": "replace-with-your-deepseek-key",
+      "base_url": "https://api.deepseek.com/v1",
+      "model": "deepseek-r1"
+    },
+    "qwen2.5": {
+      "api_key": "replace-with-your-qwen-key",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen2.5"
+    }
+  }
+}

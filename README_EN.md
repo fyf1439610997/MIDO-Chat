@@ -14,6 +14,13 @@ It combines video detection (behavior/emotion), audio transcription + ICAP, inst
 - Class memory file: load local baseline memory to generate class-specific suggestions
 - Downloadable artifacts: audio, transcript, engagement CSV/JSON, structured instructional design JSON
 
+## Project Showcase
+
+![MIDO-Chat UI Overview](./docs/images/mido-chat-overview.png)
+
+> Place your screenshot at `docs/images/mido-chat-overview.png`.  
+> For multiple screenshots, add more images under `docs/images/` and append markdown image links in this README.
+
 ## Tech Stack
 
 - Backend: Python, FastAPI, Pydantic, OpenAI SDK, Jinja2, Uvicorn

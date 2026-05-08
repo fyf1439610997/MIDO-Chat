@@ -16,7 +16,7 @@ It combines video detection (behavior/emotion), audio transcription + ICAP, inst
 
 ## Project Showcase
 
-![MIDO-Chat UI Overview](./docs/images/mido-chat-overview.png)
+![MIDO-Chat UI Overview](./mido-chat-overview.png)
 
 > Place your screenshot at `docs/images/mido-chat-overview.png`.  
 > For multiple screenshots, add more images under `docs/images/` and append markdown image links in this README.

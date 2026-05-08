@@ -16,7 +16,7 @@ MIDO-Chat（Multimodal Instructional Design Optimization）是一个面向课堂
 
 ## 项目展示图
 
-![MIDO-Chat UI Overview](./docs/images/mido-chat-overview.png)
+![MIDO-Chat UI Overview](./mido-chat-overview.png)
 
 > 请将展示图放到 `docs/images/mido-chat-overview.png`。  
 > 如需多图展示，可继续在该目录下新增图片并在 README 中追加 Markdown 图片链接。
